@@ -353,5 +353,45 @@ export interface FirebasePlugin {
         error: (err: string) => void,
         listenerId: string
     ): void
+    fetchFromRealtimeDatabase(
+        path: string,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
+    fetchFromRealtimeDatabaseOnce(
+        path: string,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
+    setInRealtimeDatabase(
+        path: string,
+        value: object,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
+    updateChildrenInRealtimeDatabase(
+        path: string,
+        value: object,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
+    deleteDocumentFromRealtimeDatabase(
+        path: string,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
+    removeRealtimeDatabaseListener(
+        listenerKey: string,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
+    realtimeDatabaseOffline(
+        success?: () => void,
+        error?: (err: string) => void
+    ): void
+    realtimeDatabaseOnline(
+        success?: () => void,
+        error?: (err: string) => void
+    ): void
 }
 declare var FirebasePlugin: FirebasePlugin;

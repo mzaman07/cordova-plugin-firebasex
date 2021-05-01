@@ -2,6 +2,7 @@
 #import "AppDelegate.h"
 #import "Firebase.h"
 @import FirebaseFirestore;
+@import FirebaseDatabase;
 
 @interface FirebasePlugin : CDVPlugin
 
@@ -101,11 +102,21 @@
 - (void)listenToFirestoreCollection:(CDVInvokedUrlCommand*)command;
 - (void)removeFirestoreListener:(CDVInvokedUrlCommand*)command;
 
+// Database
+- (void)fetchFromRealtimeDatabase:(CDVInvokedUrlCommand*)command;
+- (void)fetchFromRealtimeDatabaseOnce:(CDVInvokedUrlCommand*)command;
+- (void)setInRealtimeDatabase:(CDVInvokedUrlCommand*)command;
+- (void)updateChildrenInRealtimeDatabase:(CDVInvokedUrlCommand*)command;
+- (void)deleteFromRealtimeDatabase:(CDVInvokedUrlCommand*)command;
+- (void)removeRealtimeDatabaseListener:(CDVInvokedUrlCommand*)command;
+- (void)realtimeDatabaseOnline:(CDVInvokedUrlCommand*)command;
+- (void)realtimeDatabaseOffline:(CDVInvokedUrlCommand*)command;
 
 // Internals
 + (FirebasePlugin *) firebasePlugin;
 + (NSString*) appleSignInNonce;
 + (void) setFirestore:(FIRFirestore*) firestoreInstance;
++ (void) setRealtimeDatabase:(FIRDatabase*) realtimeDatabaseInstance;
 - (void) handlePluginExceptionWithContext: (NSException*) exception :(CDVInvokedUrlCommand*)command;
 - (void) handlePluginExceptionWithoutContext: (NSException*) exception;
 - (void) _logError: (NSString*)msg;

@@ -6,6 +6,7 @@
 
 @import UserNotifications;
 @import FirebaseFirestore;
+@import FirebaseDatabase;
 
 // Implement UNUserNotificationCenterDelegate to receive display notification via APNS for devices running iOS 10 and above.
 // Implement FIRMessagingDelegate to receive data message via FCM for devices running iOS 10 and above.
@@ -83,6 +84,8 @@ static bool shouldEstablishDirectChannel = false;
         
         // Setup Firestore
         [FirebasePlugin setFirestore:[FIRFirestore firestore]];
+        // Setup Realtime Database
+        [FirebasePlugin setRealtimeDatabase:[FIRDatabase database]];
         
         // Setup Google SignIn
         [GIDSignIn sharedInstance].clientID = [FIRApp defaultApp].options.clientID;

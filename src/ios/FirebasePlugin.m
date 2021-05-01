@@ -36,9 +36,11 @@ static BOOL registeredForRemoteNotifications = NO;
 static NSMutableDictionary* authCredentials;
 static NSString* currentNonce; // used for Apple Sign In
 static FIRFirestore* firestore;
+static FIRDatabase* database;
 static NSUserDefaults* preferences;
 static NSDictionary* googlePlist;
 static NSMutableDictionary* firestoreListeners;
+static NSMutableDictionary* realtimeDatabaseListeners;
 
 
 + (FirebasePlugin*) firebasePlugin {
@@ -51,6 +53,10 @@ static NSMutableDictionary* firestoreListeners;
 
 + (void) setFirestore:(FIRFirestore*) firestoreInstance{
     firestore = firestoreInstance;
+}
+
++ (void) setRealtimeDatabase:(FIRDatabase*) realtimeDatabaseInstance{
+    database = realtimeDatabaseInstance;
 }
 
 // @override abstract
@@ -84,6 +90,7 @@ static NSMutableDictionary* firestoreListeners;
 
         authCredentials = [[NSMutableDictionary alloc] init];
         firestoreListeners = [[NSMutableDictionary alloc] init];
+        realtimeDatabaseListeners = [[NSMutableDictionary alloc] init];
     }@catch (NSException *exception) {
         [self handlePluginExceptionWithoutContext:exception];
     }
@@ -1887,6 +1894,170 @@ static NSMutableDictionary* firestoreListeners;
     return removed;
 }
 
+/*
+* Database
+*/
+
+- (void)fetchFromRealtimeDatabase:(CDVInvokedUrlCommand*)command{
+    [self.delegate runInBackground:^{
+        @try {
+            NSString* path = [command.arguments objectAtIndex:0];
+            // NSDictionary* queryLimits = [command.arguments objectAtIndex:1];
+            FIRDatabaseQuery* query = [[database reference] child:path];
+            FIRDatabaseHandle listener = [query observeEventType:(FIRDataEventTypeValue) 
+                withBlock:^(FIRDataSnapshot * _Nonnull snapshot) {
+                @try {
+                    if (snapshot != nil) {
+                        NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];
+                        [jsResult setObject:snapshot forKey:@"snapshot"];
+                        [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
+                    } else {
+                        [self sendPluginErrorWithError:error command:command];
+                    }
+                }@catch (NSException *exception) {
+                    [self handlePluginExceptionWithContext:exception :command];
+                }
+            }
+            NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];;
+            [jsResult setObject:@"id" forKey:@"eventType"];
+            NSNumber* key = [self saveRealtimeDatabaseListener:listener];
+            [jsResult setObject:key forKey:@"id"];
+            [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
+        }
+        @catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (void)fetchFromRealtimeDatabaseOnce:(CDVInvokedUrlCommand*)command{
+    [self.delegate runInBackground:^{
+        @try {
+            NSString* path = [command.arguments objectAtIndex:0];
+            // NSDictionary* queryLimits = [command.arguments objectAtIndex:1];
+            FIRDatabaseQuery* query = [[database reference] child:path];
+            [query observeSingleEventOfType:(FIRDataEventTypeValue) 
+                withBlock:^(FIRDataSnapshot * _Nonnull snapshot) {
+                @try {
+                    if (snapshot != nil) {
+                        NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];
+                        [jsResult setObject:snapshot forKey:@"snapshot"];
+                        [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
+                    } else {
+                        [self sendPluginErrorWithError:error command:command];
+                    }
+                }@catch (NSException *exception) {
+                    [self handlePluginExceptionWithContext:exception :command];
+                }
+            }
+        }
+        @catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (void)setInRealtimeDatabase:(CDVInvokedUrlCommand*)command{
+    [self.delegate runInBackground:^{
+        @try {
+            NSString* path = [command.arguments objectAtIndex:0];
+            NSDictionary* value = [command.arguments objectAtIndex:1];
+            [[database referenceWithPath:path] setValue:value withCompletionBlock:^(NSError * _Nullable error, FIRDatabaseReference * _Nonnull ref) {
+                [self handleEmptyResultWithPotentialError:error command:command];
+            }];
+        }
+        @catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (void)updateChildrenInRealtimeDatabase:(CDVInvokedUrlCommand*)command{
+    [self.commandDelegate runInBackground:^{
+        @try {
+            NSString* path = [command.arguments objectAtIndex:0];
+            NSDictionary* updatedChildren = [command.arguments objectAtIndex:1];
+            [[database referenceWithPath:path] updateChildValues:newUpdated withCompletionBlock:^(NSError * _Nullable error, FIRDatabaseReference * _Nonnull ref) {
+                [self handleEmptyResultWithPotentialError:error command:command];
+            }];
+        }@catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (void)deleteDocumentFromRealtimeDatabase:(CDVInvokedUrlCommand*)command{
+    [self.commandDelegate runInBackground:^{
+        @try {
+            NSString* path = [command.arguments objectAtIndex:0];
+            [[database referenceWithPath:path] removeValueWithCompletionBlock:^(NSError * _Nullable error, FIRDatabaseReference * _Nonnull ref) {
+                [self handleEmptyResultWithPotentialError:error command:command];
+            }];
+        }@catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (NSNumber) saveRealtimeDatabaseListener: (FIRDatabaseHandle*) realtimeDatabaseListener {
+    int id = [self generateId];
+    NSNumber* key = [NSNumber numberWithInt:id];
+    [realtimeDatabaseListeners setObject:realtimeDatabaseListener forKey:key];
+    return key;
+}
+
+- (void)removeRealtimeDatabaseListener:(CDVInvokedUrlCommand*)command{
+    [self.commandDelegate runInBackground:^{
+        @try {
+            NSNumber* listenerId = @([[command.arguments objectAtIndex:0] intValue]);
+            bool removed = [self _removeDatabaseListener:listenerId];
+            if(removed){
+                [self sendPluginSuccess:command];
+            }else{
+                [self sendPluginErrorWithMessage:@"Realtime Database Listener ID not found" :command];
+            }
+        }@catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (bool) _removeDatabaseListener: (NSNumber*) key {
+    bool removed = false;
+    if([realtimeDatabaseListeners objectForKey:key] != nil){
+        FIRDatabaseHandle realtimeDatabaseListener = [realtimeDatabaseListeners objectForKey:key];
+        [[database reference] removeObserverWithHandle:realtimeDatabaseListener];
+        [realtimeDatabaseListeners removeObjectForKey:key];
+        removed = true;
+    }
+    return removed;
+}
+
+- (void) realtimeDatabaseOffline:(CDVInvokedUrlCommand*)command{
+    [self.delegate runInBackground:^{
+        @try {
+            [database goOffline];
+            [self sendPluginSuccess:command];
+        }
+        @catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+- (void) realtimeDatabaseOnline:(CDVInvokedUrlCommand*)command{
+    [self.delegate runInBackground:^{
+        @try {
+            [database goOnline];
+            [self sendPluginSuccess:command];
+        }
+        @catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
+
 /********************************/
 #pragma mark - utility functions
 /********************************/
@@ -2074,6 +2245,7 @@ static NSMutableDictionary* firestoreListeners;
     while (key < 0
        || [authCredentials objectForKey:[NSNumber numberWithInt:key]] != nil
        || [firestoreListeners objectForKey:[NSNumber numberWithInt:key]] != nil
+       || [realtimeDatabaseListeners objectForKey:[NSNumber numberWithInt:key]] != nil
     ) {
         key = arc4random_uniform(100000);
     }

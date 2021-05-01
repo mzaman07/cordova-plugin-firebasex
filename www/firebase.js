@@ -428,3 +428,45 @@ exports.removeFirestoreListener = function (success, error, listenerId) {
 
     exec(success, error, "FirebasePlugin", "removeFirestoreListener", [listenerId.toString()]);
 };
+
+// Realtime Database
+
+exports.fetchFromRealtimeDatabase = function (path, success, error) {
+    if(typeof path !== 'string') return error("'path' must be a string specifying the Database document path");
+    exec(success, error, "FirebasePlugin", "fetchFromRealtimeDatabase", [path]);
+};
+
+exports.fetchFromRealtimeDatabaseOnce = function (path, success, error) {
+    if(typeof path !== 'string') return error("'path' must be a string specifying the Database document path");
+    exec(success, error, "FirebasePlugin", "fetchFromRealtimeDatabaseOnce", [path]);
+};
+
+exports.setInRealtimeDatabase = function (path, value, success, error) {
+    if(typeof path !== 'string') return error("'path' must be a string specifying the Database document path");
+    if(value === undefined) return error("'value' must be a defined object");
+    exec(success, error, "FirebasePlugin", "setInRealtimeDatabase", [path, value]);
+};
+
+exports.updateChildrenInRealtimeDatabase = function (path, value, success, error) {
+    if(typeof path !== 'string') return error("'path' must be a string specifying the Database document path");
+    if(value === undefined) return error("'value' must be a defined object");
+    exec(success, error, "FirebasePlugin", "updateDatabaseChildren", [path, value]);
+};
+
+exports.deleteDocumentFromRealtimeDatabase = function(path, success, error) {
+    if(typeof path !== 'string') return error("'path' must be a string specifying the Database document path");
+    exec(success, error, "FirebasePlugin", "deleteDocumentFromRealtimeDatabase", [path]);
+};
+
+exports.removeRealtimeDatabaseListener = function (listenerKey, success, error) {
+    if(typeof listenerKey !== 'string') return error("'listenerKey' must be a string");
+    exec(success, error, "FirebasePlugin", "removeRealtimeDatabaseListener", [listenerKey]);
+};
+
+exports.realtimeDatabaseOffline = function(success, error) {
+    exec(success, error, "FirebasePlugin", "realtimeDatabaseOffline", []);
+};
+
+exports.realtimeDatabaseOnline = function(success, error) {
+    exec(success, error, "FirebasePlugin", "realtimeDatabaseOnline", []);
+};
