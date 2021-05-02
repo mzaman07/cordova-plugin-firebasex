@@ -61,6 +61,11 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -108,6 +113,7 @@ public class FirebasePlugin extends CordovaPlugin {
     private FirebaseAnalytics mFirebaseAnalytics;
     private FirebaseCrashlytics firebaseCrashlytics;
     private FirebaseFirestore firestore;
+    private DatabaseReference database;
     private Gson gson;
     private FirebaseAuth.AuthStateListener authStateListener;
     private boolean authStateChangeListenerInitialized = false;
@@ -139,6 +145,8 @@ public class FirebasePlugin extends CordovaPlugin {
     private Map<String, OAuthProvider> authProviders = new HashMap<String, OAuthProvider>();
 
     private Map<String, ListenerRegistration> firestoreListeners = new HashMap<String, ListenerRegistration>();
+    private Map<String, DatabaseReference> databaseReferences = new HashMap<String, DatabaseReference>();
+    private Map<String, ValueEventListener> databaseListeners = new HashMap<String, ValueEventListener>();
 
     @Override
     protected void pluginInitialize() {
@@ -173,6 +181,8 @@ public class FirebasePlugin extends CordovaPlugin {
 
                     firestore = FirebaseFirestore.getInstance();
                     gson = new Gson();
+
+                    database = FirebaseDatabase.getInstance().getReference();
 
                     if (extras != null && extras.size() > 1) {
                         if (FirebasePlugin.notificationStack == null) {
@@ -355,6 +365,30 @@ public class FirebasePlugin extends CordovaPlugin {
                 this.listenToFirestoreCollection(args, callbackContext);
             } else if (action.equals("removeFirestoreListener")) {
                 this.removeFirestoreListener(args, callbackContext);
+            } else if (action.equals("fetchFromRealtimeDatabase")) {
+                this.fetchFromRealtimeDatabase(args, callbackContext);
+                return true;
+            } else if (action.equals("fetchFromRealtimeDatabaseOnce")) {
+                this.fetchFromRealtimeDatabaseOnce(args, callbackContext);
+                return true;
+            } else if (action.equals("setInRealtimeDatabase")) {
+                this.setInRealtimeDatabase(args, callbackContext);
+                return true;
+            } else if (action.equals("updateChildrenInRealtimeDatabase")) {
+                this.updateChildrenInRealtimeDatabase(args, callbackContext);
+                return true;
+            } else if (action.equals("deleteDocumentFromRealtimeDatabase")) {
+                this.deleteDocumentFromRealtimeDatabase(args, callbackContext);
+                return true;
+            } else if (action.equals("removeRealtimeDatabaseListener")) {
+                this.removeRealtimeDatabaseListener(args, callbackContext);
+                return true;
+            } else if (action.equals("realtimeDatabaseOffline")) {
+                this.realtimeDatabaseOffline(args, callbackContext);
+                return true;
+            } else if (action.equals("realtimeDatabaseOnline")) {
+                this.realtimeDatabaseOnline(args, callbackContext);
+                return true;
             } else if (action.equals("grantPermission")
                     || action.equals("setBadgeNumber")
                     || action.equals("getBadgeNumber")
@@ -2518,6 +2552,214 @@ public class FirebasePlugin extends CordovaPlugin {
         return removed;
     }
 
+    //
+    // Realtime Database
+    //
+    private void handleDatabaseValue(Object value, CallbackContext callbackContext, boolean keepCallback) throws JSONException {
+        PluginResult pluginResult;
+
+        if (value == null) {
+            pluginResult = new PluginResult(PluginResult.Status.OK, (String) null);
+        } else if (value.getClass() == Long.class) {
+            pluginResult = new PluginResult(PluginResult.Status.OK, ((Long) value).intValue());
+        } else if (value.getClass() == Double.class) {
+            pluginResult = new PluginResult(PluginResult.Status.OK, value.toString());
+        } else if (value.getClass() == String.class) {
+            pluginResult = new PluginResult(PluginResult.Status.OK, value.toString());
+        } else if (value.getClass() == Boolean.class) {
+            pluginResult = new PluginResult(PluginResult.Status.OK, (Boolean) value ? 1 : 0);
+        } else if (value.getClass() == ArrayList.class) {
+            pluginResult = new PluginResult(PluginResult.Status.OK, objectToJsonArray(value));
+        } else {
+            pluginResult = new PluginResult(PluginResult.Status.OK, objectToJsonObject(value));
+        }
+
+        pluginResult.setKeepCallback(keepCallback);
+        callbackContext.sendPluginResult(pluginResult);
+    }
+
+    private void fetchFromRealtimeDatabase(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    String path = args.getString(0);
+                    database.child(path).addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            try {
+                                handleDatabaseValue(dataSnapshot.getValue(), callbackContext, true);
+                            } catch (Exception e) {
+                                handleExceptionWithContext(e, callbackContext);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            handleExceptionWithContext(databaseError.toException(), callbackContext);
+                        }
+                    });
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void fetchFromRealtimeDatabaseOnce(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    String path = args.getString(0);
+                    database.child(path).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            try {
+                                handleDatabaseValue(dataSnapshot.getValue(), callbackContext, false);
+                            } catch (Exception e) {
+                                handleExceptionWithContext(e, callbackContext);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            handleExceptionWithContext(databaseError.toException(), callbackContext);
+                        }
+                    });
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void setInRealtimeDatabase(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    String path = args.getString(0);
+                    HashMap<String, Object> value = new Gson().fromJson(args.getJSONObject(1).toString(), HashMap.class);
+                    database.child(path).setValue(value)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            callbackContext.success();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            handleExceptionWithContext(e, callbackContext);
+                        }
+                    });
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void updateChildrenInRealtimeDatabase(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    String path = args.getString(0);
+                    HashMap<String, Object> value = new Gson().fromJson(args.getJSONObject(1).toString(), HashMap.class);
+                    database.child(path).updateChildren(value)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            callbackContext.success();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            handleExceptionWithContext(e, callbackContext);
+                        }
+                    });
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void deleteDocumentFromRealtimeDatabase(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    String path = args.getString(0);
+                    database.child(path).removeValue();
+                    callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void removeRealtimeDatabaseListener(JSONArray args, CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    String listenerKey = args.getString(0);
+
+                    DatabaseReference reference = databaseReferences.get(listenerKey);
+                    ValueEventListener listener = databaseListeners.get(listenerKey);
+
+                    if (reference == null || listener == null) {
+                        Thread t = new Thread();
+                        t.start();
+                        Thread.yield();
+                    }
+
+                    int called = 0;
+                    while(reference == null || listener == null) {
+                        Thread.sleep(1000); //Wait until the listener was completed
+                        reference = databaseReferences.get(listenerKey);
+                        listener = databaseListeners.get(listenerKey);
+                        called++;
+                        if (called > 100) {
+                            throw new Exception("Maximum execution time exceeded to remove a RealtimeDatabase listner.");
+                        }
+                    }
+
+                    reference.removeEventListener(listener);
+                    databaseReferences.remove(listenerKey);
+                    databaseListeners.remove(listenerKey);
+                    callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void realtimeDatabaseOffline(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    database.getDatabase().goOffline();
+                    callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void realtimeDatabaseOnline(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    database.getDatabase().goOnline();
+                    callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
 
     /*
      * Helper methods

@@ -450,7 +450,7 @@ exports.setInRealtimeDatabase = function (path, value, success, error) {
 exports.updateChildrenInRealtimeDatabase = function (path, value, success, error) {
     if(typeof path !== 'string') return error("'path' must be a string specifying the Database document path");
     if(value === undefined) return error("'value' must be a defined object");
-    exec(success, error, "FirebasePlugin", "updateDatabaseChildren", [path, value]);
+    exec(success, error, "FirebasePlugin", "updateChildrenInRealtimeDatabase", [path, value]);
 };
 
 exports.deleteDocumentFromRealtimeDatabase = function(path, success, error) {
