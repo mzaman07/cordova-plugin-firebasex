@@ -2583,7 +2583,8 @@ public class FirebasePlugin extends CordovaPlugin {
             public void run() {
                 try {
                     String path = args.getString(0);
-                    database.child(path).addValueEventListener(new ValueEventListener() {
+                    DatabaseReference reference = database.child(path);
+                    ValueEventListener listener = new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             try {
@@ -2597,7 +2598,14 @@ public class FirebasePlugin extends CordovaPlugin {
                         public void onCancelled(DatabaseError databaseError) {
                             handleExceptionWithContext(databaseError.toException(), callbackContext);
                         }
-                    });
+                    };
+                    reference.addValueEventListener(listener);
+                    String listenerKey = this.saveRealtimeDatabaseListener(listener);
+                    databaseReferences.put(listenerKey, reference);
+                    JSONObject jsResult = new JSONObject();
+                    jsResult.put("eventType", "id");
+                    jsResult.put("id", id);
+                    sendPluginResultAndKeepCallback(jsResult, callbackContext);
                 } catch (Exception e) {
                     handleExceptionWithContext(e, callbackContext);
                 }
@@ -2696,6 +2704,12 @@ public class FirebasePlugin extends CordovaPlugin {
                 }
             }
         });
+    }
+
+    private String saveRealtimeDatabaseListener(ValueEventListener listenerRegistration){
+        String id = this.generateId();
+        this.databaseListeners.put(id, listenerRegistration);
+        return id;
     }
 
     private void removeRealtimeDatabaseListener(JSONArray args, CallbackContext callbackContext) {
