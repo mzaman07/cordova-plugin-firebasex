@@ -3498,7 +3498,7 @@ FirebasePlugin.removeFirestoreListener(function(){
 }, listenerId);
 ```
 ## Realtime Database
-These plugin API functions provide CRUD operations for working with realtime database.
+These plugin API provides functionality to leverage the Firebase Realtime Database.
 
 ### fetchFromRealtimeDatabase
 Get values from a database path and sync for new updates.
