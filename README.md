@@ -3544,7 +3544,7 @@ FirebasePlugin.fetchDatabaseOnce(path, function(result){
 ```
 
 ### setInRealtimeDatabase
-Save a value on the path.
+Save a value to a path in the database.
 
 [Android](https://firebase.google.com/docs/database/android/read-and-write#write_data) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#write_data)
 
