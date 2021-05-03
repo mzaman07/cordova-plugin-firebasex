@@ -3681,8 +3681,8 @@ Enables or disables offline persistence for offline database access within the a
 - {function} success - callback function to run after successfully going online.
 - {function} error - callback function which will be passed a {string} error message as an argument.
 ```javascript
-
-FirebasePlugin.setRealtimeDatabasePersistence(true, function(result){
+var persistent = true;
+FirebasePlugin.setRealtimeDatabasePersistence(persistent, function(result){
     console.log("Successfully enabled persistence for the database");
 }, function(error){
     console.error("Error enabling persistence: "+error);
