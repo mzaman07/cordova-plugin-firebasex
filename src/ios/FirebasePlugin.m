@@ -2083,6 +2083,23 @@ static NSString* currentInstallationId;
     }];
 }
 
+- (void) setRealtimeDatabasePersistence:(CDVInvokedUrlCommand*)command{
+    [self.delegate runInBackground:^{
+        @try {
+            NSNumber* persistenceState = [command.arguments objectAtIndex:0];
+            if([persistenceState isEqual: @(YES)]) {
+                [database persistenceEnabled:YES];
+            } else {
+                [database persistenceEnabled:NO];
+            }
+            [self sendPluginSuccess:command];
+        }
+        @catch (NSException *exception) {
+            [self handlePluginExceptionWithContext:exception :command];
+        }
+    }];
+}
+
 /*
  * Functions
  */

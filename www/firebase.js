@@ -476,6 +476,11 @@ exports.realtimeDatabaseOnline = function(success, error) {
     exec(success, error, "FirebasePlugin", "realtimeDatabaseOnline", []);
 };
 
+exports.setRealtimeDatabasePersistence = function(persistent, success, error) {
+    if (typeof persistent !== 'boolean') return error("'persistent' must be a boolean");
+    exec(success, error, "FirebasePlugin", "setRealtimeDatabasePersistence", [persistent]);
+}
+
 // Functions
 
 exports.functionsHttpsCallable = function (name, args, success, error) {

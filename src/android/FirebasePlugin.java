@@ -411,6 +411,9 @@ public class FirebasePlugin extends CordovaPlugin {
             } else if (action.equals("realtimeDatabaseOnline")) {
                 this.realtimeDatabaseOnline(args, callbackContext);
                 return true;
+            } else if (action.equals("setRealtimeDatabasePersistence")) {
+                this.realtimeDatabaseOnline(args, callbackContext);
+                return true;
             } else if (action.equals("functionsHttpsCallable")) {
                 this.functionsHttpsCallable(args, callbackContext);
             } else if (action.equals("grantPermission")
@@ -2826,6 +2829,20 @@ public class FirebasePlugin extends CordovaPlugin {
             public void run() {
                 try {
                     database.getDatabase().goOnline();
+                    callbackContext.success();
+                } catch (Exception e) {
+                    handleExceptionWithContext(e, callbackContext);
+                }
+            }
+        });
+    }
+
+    private void setRealtimeDatabasePersistence(JSONArray args, CallbackContext callbackContext) throws JSONException {
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    boolean persistence = args.getBoolean(0);
+                    database.getDatabase().setPersistenceEnabled(persistence);
                     callbackContext.success();
                 } catch (Exception e) {
                     handleExceptionWithContext(e, callbackContext);

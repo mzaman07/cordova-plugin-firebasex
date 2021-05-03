@@ -393,5 +393,10 @@ export interface FirebasePlugin {
         success?: () => void,
         error?: (err: string) => void
     ): void
+    setRealtimeDatabasePersistence(
+        persistent: boolean,
+        success: (collection: object) => void,
+        error: (err: string) => void
+    ): void
 }
 declare var FirebasePlugin: FirebasePlugin;

@@ -179,6 +179,16 @@ To help ensure this plugin is kept updated, new features are added and bugfixes 
     - [listenToDocumentInFirestoreCollection](#listentodocumentinfirestorecollection)
     - [listenToFirestoreCollection](#listentofirestorecollection)
     - [removeFirestoreListener](#removefirestorelistener)
+  - [Realtime Database](#realtime-database)
+    - [fetchFromRealtimeDatabase](#fetchFromRealtimeDatabase)
+    - [fetchFromRealtimeDatabaseOnce](#fetchFromRealtimeDatabaseOnce)
+    - [setInRealtimeDatabase](#setInRealtimeDatabase)
+    - [updateChildrenInRealtimeDatabase](#updateChildrenInRealtimeDatabase)
+    - [deleteDocumentFromRealtimeDatabase](#deleteDocumentFromRealtimeDatabase)
+    - [removeRealtimeDatabaseListener](#removeRealtimeDatabaseListener)
+    - [realtimeDatabaseOffline](#realtimeDatabaseOffline)
+    - [realtimeDatabaseOnline](#realtimeDatabaseOnline)
+    - [setRealtimeDatabasePersistence](#setRealtimeDatabasePersistence)
   - [Functions](#functions)
     - [functionsHttpsCallable](#functionshttpscallable)
   - [Installations](#installations)
@@ -3486,6 +3496,197 @@ FirebasePlugin.removeFirestoreListener(function(){
 }, function(error){
     console.error("Error removing listener: "+error);
 }, listenerId);
+```
+## Realtime Database
+These plugin API functions provide CRUD operations for working with realtime database.
+
+### fetchFromRealtimeDatabase
+Get values from a database path and sync for new updates.
+
+[Android](https://firebase.google.com/docs/database/android/read-and-write#read_data) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#read_data)
+
+Note: This function also returns a listenerId for a
+listener to keep track synced updates. For more info
+on why this needs to happen check [removeRealtimeDatabaseListener](#removeRealtimeDatabaseListener).
+
+**Parameters:**
+
+- {string} path - path of the value that you will listen
+- {function} success - callback function to call on successfully fetched data.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+``` javascript
+var path = `users/${uid}/${property}`;
+
+FirebasePlugin.fetchDatabase(path, function(result){
+    console.log("Successfully fetched database data: "+JSON.stringify(result));
+}, function(error){
+    console.error("Error fetching data: "+error);
+});
+```
+### fetchFromRealtimeDatabaseOnce
+Get values form a database path once only and do not listen for changes.
+[Android](https://firebase.google.com/docs/database/android/read-and-write#read_once_using_get) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#read_once_using_getdata)
+
+**Parameters:**
+
+- {string} path - path of the value that you will fetch
+- {function} success - callback function to call on successfully fetched data.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+``` javascript
+var path = `users/${uid}/${property}`;
+
+FirebasePlugin.fetchDatabaseOnce(path, function(result){
+    console.log("Successfully fetched database data once: "+JSON.stringify(result));
+}, function(error){
+    console.error("Error fetching data: "+error);
+});
+```
+
+### setInRealtimeDatabase
+Save a value on the path.
+
+[Android](https://firebase.google.com/docs/database/android/read-and-write#write_data) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#write_data)
+
+Note: this function overwrites any existing value and child values inside the defined path
+**Parameters:**
+
+- {string} path - path of the value that you will save
+- {object} value - value that you will save
+- {function} success - callback function to call on successfully saved data.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+var path = `users/${uid}/actions/${action}`;
+var value = { created_at: new Date().getTime(), updated_at: new Date().getTime()}
+
+FirebasePlugin.setDatabaseValue(path, value, function(result){
+    console.log("Successfully saved database data");
+}, function(error){
+    console.error("Error saving data: "+error);
+});
+```
+
+### updateChildrenInRealtimeDatabase
+Save/update a value on the path.
+
+[Android](https://firebase.google.com/docs/database/android/read-and-write#updating_or_deleting_data) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#updating_or_deleting_data)
+
+Note: this function works same as setDatabaseValue BUT does NOT overwrite any existing value and child values inside the defined path. This allows for batch updates in a single call.
+
+**Parameters:**
+
+- {string} path - path of the value that you will save
+- {object} value - value that you will save
+- {function} success - callback function to call on successfully saved data.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+var path = `users/${uid}/actions/${action}`;
+var value = { updated_at: new Date().getTime() }
+
+FirebasePlugin.updateDatabaseChildren(path, value, function(result){
+    console.log("Successfully updated database data");
+}, function(error){
+    console.error("Error updating data: "+error);
+});
+```
+
+### deleteDocumentFromRealtimeDatabase
+Removes data and its children specifed by path.
+
+[Android](https://firebase.google.com/docs/database/android/read-and-write#delete_data) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#delete_data)
+
+Note: Can also be done via setInRealtimeDatabase or 
+updateChildrenInRealtimeDatabase by sending a null.
+
+
+**Parameters:**
+
+- {string} path - path of data to be removed.
+- {function} success - callback function to call on successfully removed data.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+var path = `users/${uid}/actions/${action}`;
+
+FirebasePlugin.deleteDocumentFromRealtimeDatabase(path, function(result){
+    console.log("Successfully removed data at path");
+}, function(error){
+    console.error("Error removing data: "+error);
+});
+```
+
+### removeRealtimeDatabaseListener
+Removes a listener to stop data syncs between the app and Realtime Database.
+
+[Android](https://firebase.google.com/docs/database/android/read-and-write#detach_listeners) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#detach_listeners)
+
+Note: You must manually manage the listeners via this function. The above links explain why this could be a problem. You could potentially have duplicate reads,
+if you are not careful.
+
+**Parameters:**
+
+- {string} listenerKey - the read listener to be removed, specified by listenerKey.
+- {function} success - callback function to call on successfully removal of the listener.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+var path = `users/${uid}/actions/${action}`;
+
+FirebasePlugin.deleteDocumentFromRealtimeDatabase(path, function(result){
+    console.log("Successfully removed the read listener.");
+}, function(error){
+    console.error("Error removing the read listener: "+error);
+});
+```
+### realtimeDatabaseOffline
+Set the database connection to go offline for the app.
+
+[Android](https://firebase.google.com/docs/reference/android/com/google/firebase/database/FirebaseDatabase#public-void-gooffline) | [iOS](https://firebase.google.com/docs/reference/android/com/google/firebase/database/FirebaseDatabase#public-void-gooffline)
+
+**Parameters:**
+
+- {function} success - callback function to run after successfully going offline.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+
+FirebasePlugin.realtimeDatabaseOffline(path, function(result){
+    console.log("Successfully went offline");
+}, function(error){
+    console.error("Error going offline: "+error);
+});
+```
+
+### realtimeDatabaseOnline
+Set the database connection to go online for the app.
+
+[Android](https://firebase.google.com/docs/reference/android/com/google/firebase/database/FirebaseDatabase#public-void-goonline) | [iOS](https://firebase.google.com/docs/reference/android/com/google/firebase/database/FirebaseDatabase#public-void-goonline)
+
+**Parameters:**
+
+- {function} success - callback function to run after successfully going online.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+
+FirebasePlugin.realtimeDatabaseOnline(function(result){
+    console.log("Successfully went online");
+}, function(error){
+    console.error("Error going online: "+error);
+});
+```
+
+### setRealtimeDatabasePersistence
+Enables or disables offline persistence for offline database access within the app. The data will be saved on the disk.
+
+[Android](https://firebase.google.com/docs/database/android/offline-capabilities#section-disk-persistence) | [iOS](https://firebase.google.com/docs/database/ios/offline-capabilities#section-disk-persistence)
+
+**Parameters:**
+- {boolean} persistent - the persistence boolean flag value (true/false)
+- {function} success - callback function to run after successfully going online.
+- {function} error - callback function which will be passed a {string} error message as an argument.
+```javascript
+
+FirebasePlugin.setRealtimeDatabasePersistence(true, function(result){
+    console.log("Successfully enabled persistence for the database");
+}, function(error){
+    console.error("Error enabling persistence: "+error);
+});
 ```
 
 ## Functions

@@ -111,6 +111,7 @@
 - (void)removeRealtimeDatabaseListener:(CDVInvokedUrlCommand*)command;
 - (void)realtimeDatabaseOnline:(CDVInvokedUrlCommand*)command;
 - (void)realtimeDatabaseOffline:(CDVInvokedUrlCommand*)command;
+- (void)setRealtimeDatabasePersistence:(CDVInvokedUrlCommand*)command;
 
 // Functions
 - (void)functionsHttpsCallable:(CDVInvokedUrlCommand*)command;
