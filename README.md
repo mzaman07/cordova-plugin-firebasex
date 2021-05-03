@@ -3525,6 +3525,7 @@ FirebasePlugin.fetchDatabase(path, function(result){
 ```
 ### fetchFromRealtimeDatabaseOnce
 Get values form a database path once only and do not listen for changes.
+
 [Android](https://firebase.google.com/docs/database/android/read-and-write#read_once_using_get) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#read_once_using_getdata)
 
 **Parameters:**
