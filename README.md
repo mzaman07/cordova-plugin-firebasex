@@ -3567,7 +3567,7 @@ FirebasePlugin.setDatabaseValue(path, value, function(result){
 ```
 
 ### updateChildrenInRealtimeDatabase
-Save/update a value on the path.
+Save/update a value on the specified path.
 
 [Android](https://firebase.google.com/docs/database/android/read-and-write#updating_or_deleting_data) | [iOS](https://firebase.google.com/docs/database/ios/read-and-write#updating_or_deleting_data)
 
