@@ -2662,8 +2662,8 @@ public class FirebasePlugin extends CordovaPlugin {
                         }
                     };
                     reference.addValueEventListener(listener);
-                    String listenerKey = this.saveRealtimeDatabaseListener(listener);
-                    databaseReferences.put(listenerKey, reference);
+                    String id = saveRealtimeDatabaseListener(listener);
+                    databaseReferences.put(id, reference);
                     JSONObject jsResult = new JSONObject();
                     jsResult.put("eventType", "id");
                     jsResult.put("id", id);

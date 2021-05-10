@@ -3517,7 +3517,7 @@ on why this needs to happen check [removeRealtimeDatabaseListener](#removeRealti
 ``` javascript
 var path = `users/${uid}/${property}`;
 
-FirebasePlugin.fetchDatabase(path, function(result){
+FirebasePlugin.fetchFromRealtimeDatabase(path, function(result){
     console.log("Successfully fetched database data: "+JSON.stringify(result));
 }, function(error){
     console.error("Error fetching data: "+error);
@@ -3536,7 +3536,7 @@ Get values form a database path once only and do not listen for changes.
 ``` javascript
 var path = `users/${uid}/${property}`;
 
-FirebasePlugin.fetchDatabaseOnce(path, function(result){
+FirebasePlugin.fetchFromRealtimeDatabaseOnce(path, function(result){
     console.log("Successfully fetched database data once: "+JSON.stringify(result));
 }, function(error){
     console.error("Error fetching data: "+error);
@@ -3559,7 +3559,7 @@ Note: this function overwrites any existing value and child values inside the de
 var path = `users/${uid}/actions/${action}`;
 var value = { created_at: new Date().getTime(), updated_at: new Date().getTime()}
 
-FirebasePlugin.setDatabaseValue(path, value, function(result){
+FirebasePlugin.setInRealtimeDatabase(path, value, function(result){
     console.log("Successfully saved database data");
 }, function(error){
     console.error("Error saving data: "+error);
@@ -3583,7 +3583,7 @@ Note: this function works same as setDatabaseValue BUT does NOT overwrite any ex
 var path = `users/${uid}/actions/${action}`;
 var value = { updated_at: new Date().getTime() }
 
-FirebasePlugin.updateDatabaseChildren(path, value, function(result){
+FirebasePlugin.updateChildrenInRealtimeDatabase(path, value, function(result){
     console.log("Successfully updated database data");
 }, function(error){
     console.error("Error updating data: "+error);
@@ -3630,7 +3630,7 @@ if you are not careful.
 ```javascript
 var path = `users/${uid}/actions/${action}`;
 
-FirebasePlugin.deleteDocumentFromRealtimeDatabase(path, function(result){
+FirebasePlugin.removeRealtimeDatabaseListener(path, function(result){
     console.log("Successfully removed the read listener.");
 }, function(error){
     console.error("Error removing the read listener: "+error);
