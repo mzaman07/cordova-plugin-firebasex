@@ -1935,7 +1935,7 @@ static NSString* currentInstallationId;
                 @try {
                     if (snapshot != nil) {
                         NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];
-                        [jsResult setObject:snapshot forKey:@"snapshot"];
+                        [jsResult setObject:snapshot.value forKey:@"snapshot"];
                         [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
                     } else {
                         [self sendPluginNoResultAndKeepCallback:command callbackId:command.callbackId];
@@ -1967,7 +1967,7 @@ static NSString* currentInstallationId;
                 @try {
                     if (snapshot != nil) {
                         NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];
-                        [jsResult setObject:snapshot forKey:@"snapshot"];
+                        [jsResult setObject:snapshot.value forKey:@"snapshot"];
                         [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
                     } else {
                         [self sendPluginNoResultAndKeepCallback:command callbackId:command.callbackId];

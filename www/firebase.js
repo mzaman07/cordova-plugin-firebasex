@@ -464,7 +464,7 @@ exports.deleteDocumentFromRealtimeDatabase = function(path, success, error) {
 };
 
 exports.removeRealtimeDatabaseListener = function (listenerKey, success, error) {
-    if(typeof listenerKey !== 'string') return error("'listenerKey' must be a string");
+    if(typeof listenerKey === 'undefined') return error("'listenerKey' must be specified");
     exec(success, error, "FirebasePlugin", "removeRealtimeDatabaseListener", [listenerKey]);
 };
 
