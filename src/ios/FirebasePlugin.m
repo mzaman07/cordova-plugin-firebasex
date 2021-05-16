@@ -1966,7 +1966,7 @@ static NSString* currentInstallationId;
                 withBlock:^(FIRDataSnapshot * _Nonnull snapshot) {
                 @try {
                     if (snapshot != nil) {
-                        NSMutableDictionary: jsResult = [[NSMutableDictionary alloc] init];
+                        NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];
                         [jsResult setObject:snapshot forKey:@"snapshot"];
                         [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
                     } else {
