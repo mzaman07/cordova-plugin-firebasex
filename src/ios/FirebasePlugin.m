@@ -1925,7 +1925,7 @@ static NSString* currentInstallationId;
 */
 
 - (void)fetchFromRealtimeDatabase:(CDVInvokedUrlCommand*)command{
-    [self.delegate runInBackground:^{
+    [self.commandDelegate runInBackground:^{
         @try {
             NSString* path = [command.arguments objectAtIndex:0];
             // NSDictionary* queryLimits = [command.arguments objectAtIndex:1];
@@ -1938,12 +1938,12 @@ static NSString* currentInstallationId;
                         [jsResult setObject:snapshot forKey:@"snapshot"];
                         [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
                     } else {
-                        [self sendPluginErrorWithError:error command:command];
+                        [self sendPluginNoResultAndKeepCallback:command callbackId:command.callbackId];
                     }
                 }@catch (NSException *exception) {
                     [self handlePluginExceptionWithContext:exception :command];
                 }
-            }
+            }];
             NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];;
             [jsResult setObject:@"id" forKey:@"eventType"];
             NSNumber* key = [self saveRealtimeDatabaseListener:listener];
@@ -1957,7 +1957,7 @@ static NSString* currentInstallationId;
 }
 
 - (void)fetchFromRealtimeDatabaseOnce:(CDVInvokedUrlCommand*)command{
-    [self.delegate runInBackground:^{
+    [self.commandDelegate runInBackground:^{
         @try {
             NSString* path = [command.arguments objectAtIndex:0];
             // NSDictionary* queryLimits = [command.arguments objectAtIndex:1];
@@ -1966,16 +1966,16 @@ static NSString* currentInstallationId;
                 withBlock:^(FIRDataSnapshot * _Nonnull snapshot) {
                 @try {
                     if (snapshot != nil) {
-                        NSMutableDictionary* jsResult = [[NSMutableDictionary alloc] init];
+                        NSMutableDictionary: jsResult = [[NSMutableDictionary alloc] init];
                         [jsResult setObject:snapshot forKey:@"snapshot"];
                         [self sendPluginDictionaryResultAndKeepCallback:jsResult command:command callbackId:command.callbackId];
                     } else {
-                        [self sendPluginErrorWithError:error command:command];
+                        [self sendPluginNoResultAndKeepCallback:command callbackId:command.callbackId];
                     }
                 }@catch (NSException *exception) {
                     [self handlePluginExceptionWithContext:exception :command];
                 }
-            }
+            }];
         }
         @catch (NSException *exception) {
             [self handlePluginExceptionWithContext:exception :command];
@@ -1984,7 +1984,7 @@ static NSString* currentInstallationId;
 }
 
 - (void)setInRealtimeDatabase:(CDVInvokedUrlCommand*)command{
-    [self.delegate runInBackground:^{
+    [self.commandDelegate runInBackground:^{
         @try {
             NSString* path = [command.arguments objectAtIndex:0];
             NSDictionary* value = [command.arguments objectAtIndex:1];
@@ -2003,7 +2003,7 @@ static NSString* currentInstallationId;
         @try {
             NSString* path = [command.arguments objectAtIndex:0];
             NSDictionary* updatedChildren = [command.arguments objectAtIndex:1];
-            [[database referenceWithPath:path] updateChildValues:newUpdated withCompletionBlock:^(NSError * _Nullable error, FIRDatabaseReference * _Nonnull ref) {
+            [[database referenceWithPath:path] updateChildValues:updatedChildren withCompletionBlock:^(NSError * _Nullable error, FIRDatabaseReference * _Nonnull ref) {
                 [self handleEmptyResultWithPotentialError:error command:command];
             }];
         }@catch (NSException *exception) {
@@ -2025,11 +2025,13 @@ static NSString* currentInstallationId;
     }];
 }
 
-- (NSNumber) saveRealtimeDatabaseListener: (FIRDatabaseHandle*) realtimeDatabaseListener {
-    int id = [self generateId];
-    NSNumber* key = [NSNumber numberWithInt:id];
-    [realtimeDatabaseListeners setObject:realtimeDatabaseListener forKey:key];
-    return key;
+- (NSNumber*) saveRealtimeDatabaseListener: (FIRDatabaseHandle) realtimeDatabaseListener {
+    @synchronized (realtimeDatabaseListeners) {
+        int id = [self generateId];
+        NSNumber* key = [NSNumber numberWithInt:id];
+        [realtimeDatabaseListeners setObject:@(realtimeDatabaseListener) forKey:key];
+        return key;
+    }
 }
 
 - (void)removeRealtimeDatabaseListener:(CDVInvokedUrlCommand*)command{
@@ -2060,7 +2062,7 @@ static NSString* currentInstallationId;
 }
 
 - (void) realtimeDatabaseOffline:(CDVInvokedUrlCommand*)command{
-    [self.delegate runInBackground:^{
+    [self.commandDelegate runInBackground:^{
         @try {
             [database goOffline];
             [self sendPluginSuccess:command];
@@ -2072,7 +2074,7 @@ static NSString* currentInstallationId;
 }
 
 - (void) realtimeDatabaseOnline:(CDVInvokedUrlCommand*)command{
-    [self.delegate runInBackground:^{
+    [self.commandDelegate runInBackground:^{
         @try {
             [database goOnline];
             [self sendPluginSuccess:command];
@@ -2084,13 +2086,13 @@ static NSString* currentInstallationId;
 }
 
 - (void) setRealtimeDatabasePersistence:(CDVInvokedUrlCommand*)command{
-    [self.delegate runInBackground:^{
+    [self.commandDelegate runInBackground:^{
         @try {
             NSNumber* persistenceState = [command.arguments objectAtIndex:0];
             if([persistenceState isEqual: @(YES)]) {
-                [database persistenceEnabled:YES];
+                [database setPersistenceEnabled:YES];
             } else {
-                [database persistenceEnabled:NO];
+                [database setPersistenceEnabled:NO];
             }
             [self sendPluginSuccess:command];
         }
